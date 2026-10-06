@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: CityPulse urban intelligence API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: citypulse
+    description: Authenticated CityPulse operations
 paths:
   /healthz:
     get:
@@ -24,13 +26,448 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /citypulse/dashboard:
+    get:
+      operationId: getCityDashboard
+      tags: [citypulse]
+      security:
+        - bearerAuth: []
+      summary: Get dashboard totals and recent reports
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /citypulse/reports:
+    get:
+      operationId: listCityReports
+      tags: [citypulse]
+      security:
+        - bearerAuth: []
+      summary: List accessible reports
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+      responses:
+        "200":
+          description: Reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Report"
+    post:
+      operationId: createCityReport
+      tags: [citypulse]
+      security:
+        - bearerAuth: []
+      summary: Create a citizen report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportCreateInput"
+      responses:
+        "201":
+          description: Report created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+  /citypulse/reports/analyze:
+    post:
+      operationId: analyzeCityReport
+      tags: [citypulse]
+      security:
+        - bearerAuth: []
+      summary: Analyze a report with AI decision support
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportAnalysisInput"
+      responses:
+        "200":
+          description: AI-assisted analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportAnalysis"
+  /citypulse/reports/{reportId}:
+    get:
+      operationId: getCityReport
+      tags: [citypulse]
+      security:
+        - bearerAuth: []
+      summary: Get one accessible report
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+  /citypulse/reports/{reportId}/status:
+    patch:
+      operationId: updateCityReportStatus
+      tags: [citypulse]
+      security:
+        - bearerAuth: []
+      summary: Apply an administrator report action
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportActionInput"
+      responses:
+        "200":
+          description: Updated report and recorded action
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportActionResult"
+  /citypulse/risk-scores:
+    get:
+      operationId: listCityRiskScores
+      tags: [citypulse]
+      security:
+        - bearerAuth: []
+      summary: List prototype risk scores
+      responses:
+        "200":
+          description: Risk scores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RiskScore"
+  /citypulse/predictions:
+    get:
+      operationId: listCityPredictions
+      tags: [citypulse]
+      security:
+        - bearerAuth: []
+      summary: List AI-assisted prototype forecasts
+      responses:
+        "200":
+          description: Predictions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Prediction"
+  /citypulse/analytics:
+    get:
+      operationId: getCityAnalytics
+      tags: [citypulse]
+      security:
+        - bearerAuth: []
+      summary: Get report and resolution analytics
+      parameters:
+        - name: range
+          in: query
+          schema:
+            type: string
+            enum: [7D, 30D, 90D]
+      responses:
+        "200":
+          description: Analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Analytics"
+  /citypulse/assistant:
+    post:
+      operationId: askCityAssistant
+      tags: [citypulse]
+      security:
+        - bearerAuth: []
+      summary: Ask the CityPulse assistant using current city statistics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistantInput"
+      responses:
+        "200":
+          description: Assistant response grounded in current database data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantAnswer"
+  /citypulse/alerts:
+    get:
+      operationId: listCityAlerts
+      tags: [citypulse]
+      security:
+        - bearerAuth: []
+      summary: List administrator alerts
+      responses:
+        "200":
+          description: Alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alert"
+  /citypulse/alerts/{alertId}:
+    patch:
+      operationId: updateCityAlert
+      tags: [citypulse]
+      security:
+        - bearerAuth: []
+      summary: Mark an alert as read or unread
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlertUpdate"
+      responses:
+        "200":
+          description: Updated alert
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     HealthStatus:
       type: object
       properties:
         status:
           type: string
-      required:
-        - status
-
+      required: [status]
+    Report:
+      type: object
+      required: [id, user_id, category, title, description, severity, status, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: ["string", "null"], format: uuid }
+        category: { type: string }
+        title: { type: string }
+        description: { type: string }
+        image_url: { type: ["string", "null"] }
+        latitude: { type: ["number", "null"] }
+        longitude: { type: ["number", "null"] }
+        location_name: { type: ["string", "null"] }
+        severity: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        status:
+          type: string
+          enum: [PENDING_VERIFICATION, VERIFIED, REJECTED, ASSIGNED, IN_PROGRESS, RESOLVED]
+        ai_confidence: { type: ["number", "null"] }
+        ai_category: { type: ["string", "null"] }
+        ai_summary: { type: ["string", "null"] }
+        suspicious: { type: boolean }
+        duplicate_of: { type: ["string", "null"], format: uuid }
+        evidence_count: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: ["string", "null"], format: date-time }
+    ReportCreateInput:
+      type: object
+      required: [category, title, description, severity]
+      properties:
+        category: { type: string, enum: [Traffic, Flooding, "Road Damage", Garbage, Streetlight, Pollution, Infrastructure] }
+        title: { type: string, minLength: 4, maxLength: 120 }
+        description: { type: string, minLength: 10, maxLength: 2000 }
+        severity: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        image_url: { type: ["string", "null"] }
+        latitude: { type: ["number", "null"], minimum: -90, maximum: 90 }
+        longitude: { type: ["number", "null"], minimum: -180, maximum: 180 }
+        location_name: { type: ["string", "null"], maxLength: 200 }
+        ai_confidence: { type: ["number", "null"], minimum: 0, maximum: 1 }
+        ai_category: { type: ["string", "null"] }
+        ai_summary: { type: ["string", "null"], maxLength: 500 }
+        suspicious: { type: boolean }
+        duplicate_of: { type: ["string", "null"], format: uuid }
+    ReportAnalysisInput:
+      type: object
+      required: [category, title, description, severity]
+      properties:
+        category: { type: string }
+        title: { type: string, minLength: 4, maxLength: 120 }
+        description: { type: string, minLength: 10, maxLength: 2000 }
+        severity: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        latitude: { type: ["number", "null"] }
+        longitude: { type: ["number", "null"] }
+        location_name: { type: ["string", "null"] }
+    ReportAnalysis:
+      type: object
+      required: [category, severity, confidence, summary, suspicious, possible_duplicate, verification_priority]
+      properties:
+        category: { type: string }
+        severity: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        summary: { type: string }
+        suspicious: { type: boolean }
+        possible_duplicate: { type: boolean }
+        duplicate_of: { type: ["string", "null"], format: uuid }
+        verification_priority: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        source: { type: string, enum: [gemini, fallback] }
+    ReportActionInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [VERIFIED, REJECTED, ASSIGNED, IN_PROGRESS, RESOLVED]
+        notes: { type: string, maxLength: 1000 }
+    ReportActionResult:
+      type: object
+      required: [report, action]
+      properties:
+        report: { $ref: "#/components/schemas/Report" }
+        action:
+          type: object
+          required: [id, admin_id, report_id, action, created_at]
+          properties:
+            id: { type: string, format: uuid }
+            admin_id: { type: string, format: uuid }
+            report_id: { type: string, format: uuid }
+            action: { type: string }
+            notes: { type: ["string", "null"] }
+            created_at: { type: string, format: date-time }
+    DashboardSummary:
+      type: object
+      required: [role, total_reports, pending, verified, resolved, high_risk_areas, recent_reports, demo_mode]
+      properties:
+        role: { type: string, enum: [CITIZEN, ADMIN] }
+        total_reports: { type: integer }
+        pending: { type: integer }
+        verified: { type: integer }
+        resolved: { type: integer }
+        high_risk_areas: { type: integer }
+        recent_reports:
+          type: array
+          items: { $ref: "#/components/schemas/Report" }
+        demo_mode: { type: boolean }
+    RiskScore:
+      type: object
+      required: [id, location_name, latitude, longitude, traffic_risk, flood_risk, infrastructure_risk, pollution_risk, verified_report_risk, overall_risk, risk_level, calculated_at]
+      properties:
+        id: { type: string, format: uuid }
+        location_name: { type: string }
+        latitude: { type: number }
+        longitude: { type: number }
+        traffic_risk: { type: integer }
+        flood_risk: { type: integer }
+        infrastructure_risk: { type: integer }
+        pollution_risk: { type: integer }
+        verified_report_risk: { type: integer }
+        overall_risk: { type: integer }
+        risk_level: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        calculated_at: { type: string, format: date-time }
+    Prediction:
+      type: object
+      required: [id, location_name, prediction_type, probability, expected_start, expected_end, contributing_factors, recommendation]
+      properties:
+        id: { type: string, format: uuid }
+        location_name: { type: string }
+        prediction_type: { type: string }
+        probability: { type: number }
+        expected_start: { type: string, format: date-time }
+        expected_end: { type: string, format: date-time }
+        contributing_factors: { type: array, items: { type: string } }
+        recommendation: { type: string }
+    Analytics:
+      type: object
+      required: [total_reports, verification_rate, resolution_rate, high_risk_areas, average_resolution_hours, reports_over_time, by_category, by_status, risk_distribution]
+      properties:
+        total_reports: { type: integer }
+        verification_rate: { type: number }
+        resolution_rate: { type: number }
+        high_risk_areas: { type: integer }
+        average_resolution_hours: { type: ["number", "null"] }
+        reports_over_time: { type: array, items: { $ref: "#/components/schemas/CountPoint" } }
+        by_category: { type: array, items: { $ref: "#/components/schemas/CountPoint" } }
+        by_status: { type: array, items: { $ref: "#/components/schemas/CountPoint" } }
+        risk_distribution: { type: array, items: { $ref: "#/components/schemas/CountPoint" } }
+    CountPoint:
+      type: object
+      required: [label, count]
+      properties:
+        label: { type: string }
+        count: { type: integer }
+    AssistantInput:
+      type: object
+      required: [question]
+      properties:
+        question: { type: string, minLength: 3, maxLength: 500 }
+    AssistantAnswer:
+      type: object
+      required: [verified_data, analysis, prediction, recommendation, source]
+      properties:
+        verified_data: { type: string }
+        analysis: { type: string }
+        prediction: { type: string }
+        recommendation: { type: string }
+        source: { type: string, enum: [gemini, fallback] }
+    Alert:
+      type: object
+      required: [id, title, message, severity, location_name, read, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        message: { type: string }
+        severity: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        location_name: { type: string }
+        related_report_id: { type: ["string", "null"], format: uuid }
+        read: { type: boolean }
+        created_at: { type: string, format: date-time }
+    AlertUpdate:
+      type: object
+      required: [read]
+      properties:
+        read: { type: boolean }
