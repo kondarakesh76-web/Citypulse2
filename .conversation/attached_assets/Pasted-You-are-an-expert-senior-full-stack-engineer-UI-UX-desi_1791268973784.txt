@@ -1,0 +1,1492 @@
+You are an expert senior full-stack engineer, UI/UX designer, Supabase architect, AI engineer, and hackathon product builder.
+
+Your task is to BUILD THE ENTIRE APPLICATION called:
+
+# CITYPULSE
+"See the city before the problem."
+
+This is a hackathon project and I need a COMPLETE, WORKING, DEMO-READY full-stack application.
+
+DO NOT create only a landing page.
+DO NOT create static mock screens.
+DO NOT leave important buttons non-functional.
+DO NOT stop after creating the UI.
+
+Build the actual application with:
+- frontend
+- backend
+- Supabase database
+- authentication
+- authorization
+- image upload
+- citizen reporting
+- admin verification
+- AI analysis
+- risk calculation
+- predictions
+- analytics
+- AI assistant
+- city visualization
+- responsive UI
+
+Prioritize a stable working MVP over unnecessary complexity.
+
+==================================================
+1. PRODUCT CONCEPT
+==================================================
+
+CityPulse is an AI-powered urban intelligence platform.
+
+Citizens can report problems such as:
+
+- potholes
+- road damage
+- flooding
+- garbage overflow
+- traffic problems
+- broken streetlights
+- pollution
+- infrastructure problems
+
+CityPulse analyzes the report, sends it through a verification workflow, calculates risk, and helps administrators prioritize urban problems.
+
+The key idea is:
+
+Citizen Report
+        ↓
+AI Analysis
+        ↓
+Verification
+        ↓
+Risk Engine
+        ↓
+Prediction
+        ↓
+Admin Action
+        ↓
+Resolution
+
+IMPORTANT PRODUCT PRINCIPLE:
+
+Citizen reports must NOT automatically become official truth.
+
+Every report starts as:
+
+PENDING_VERIFICATION
+
+Only VERIFIED reports should influence the official risk score.
+
+AI is a decision-support system.
+
+AI must NOT:
+- declare a real emergency
+- contact authorities automatically
+- punish users
+- make irreversible decisions
+- automatically ban users
+
+Human administrators make high-impact decisions.
+
+==================================================
+2. TECHNOLOGY STACK
+==================================================
+
+Use:
+
+Frontend:
+- Next.js
+- TypeScript
+- React
+- Tailwind CSS
+
+Backend:
+- Next.js server routes / server actions
+- Supabase
+
+Database:
+- Supabase PostgreSQL
+
+Authentication:
+- Supabase Auth
+
+Storage:
+- Supabase Storage
+
+Visualization:
+- React Three Fiber
+- Three.js
+
+Charts:
+- Recharts
+
+Icons:
+- Lucide React
+
+AI:
+- Gemini API through a secure server-side API route
+
+Do NOT expose AI API keys in client-side code.
+
+Use environment variables.
+
+==================================================
+3. IMPORTANT ENVIRONMENT VARIABLES
+==================================================
+
+I will configure secrets in Replit Secrets.
+
+Use these environment variables:
+
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+
+SUPABASE_SERVICE_ROLE_KEY
+
+GEMINI_API_KEY
+
+IMPORTANT SECURITY RULE:
+
+NEVER hard-code secret keys into source code.
+
+NEVER commit .env files containing secrets.
+
+NEVER expose SUPABASE_SERVICE_ROLE_KEY to the browser.
+
+The browser may use:
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+
+Server-side code may use:
+SUPABASE_SERVICE_ROLE_KEY
+GEMINI_API_KEY
+
+If an environment variable is missing, show a clear setup error instead of crashing mysteriously.
+
+==================================================
+4. APPLICATION ROUTES
+==================================================
+
+Create:
+
+/
+ /login
+ /signup
+ /dashboard
+ /report
+ /my-reports
+ /my-reports/[id]
+ /map
+ /control-room
+ /reports
+ /analytics
+ /ai-assistant
+ /settings
+
+Use route protection.
+
+Citizen users should not access admin pages.
+
+Admin users should have access to admin pages.
+
+==================================================
+5. USER ROLES
+==================================================
+
+There are two roles:
+
+CITIZEN
+ADMIN
+
+Create role-based authorization.
+
+Citizen:
+
+- Dashboard
+- Report Problem
+- My Reports
+- City Map
+- Profile
+
+Admin:
+
+- Control Room
+- Reports
+- Verification
+- City Map
+- Analytics
+- AI Assistant
+- Settings
+
+Do NOT create a faculty role.
+
+==================================================
+6. AUTHENTICATION
+==================================================
+
+Implement Supabase authentication.
+
+Signup:
+
+- full name
+- email
+- password
+
+Login:
+
+- email
+- password
+
+Logout.
+
+Forgot password / reset password if practical.
+
+After signup:
+create a profile row.
+
+Default role:
+CITIZEN
+
+Admin role must NOT be selectable during normal public signup.
+
+Create a secure way to make an existing account ADMIN using Supabase database/admin configuration.
+
+Do not allow users to simply choose "ADMIN" from signup.
+
+==================================================
+7. DATABASE SCHEMA
+==================================================
+
+Create Supabase SQL migrations.
+
+TABLE: profiles
+
+Fields:
+
+id UUID primary key references auth.users(id)
+full_name TEXT
+email TEXT
+role TEXT CHECK(role IN ('CITIZEN','ADMIN'))
+avatar_url TEXT
+created_at TIMESTAMPTZ
+updated_at TIMESTAMPTZ
+
+TABLE: reports
+
+id UUID primary key
+user_id UUID references profiles(id)
+category TEXT
+title TEXT
+description TEXT
+image_url TEXT
+latitude DOUBLE PRECISION
+longitude DOUBLE PRECISION
+location_name TEXT
+severity TEXT CHECK(severity IN ('LOW','MEDIUM','HIGH'))
+status TEXT CHECK(
+status IN (
+'PENDING_VERIFICATION',
+'VERIFIED',
+'REJECTED',
+'ASSIGNED',
+'IN_PROGRESS',
+'RESOLVED'
+))
+ai_confidence DOUBLE PRECISION
+ai_category TEXT
+ai_summary TEXT
+suspicious BOOLEAN DEFAULT false
+duplicate_of UUID
+evidence_count INTEGER DEFAULT 1
+created_at TIMESTAMPTZ
+updated_at TIMESTAMPTZ
+
+TABLE: risk_scores
+
+id UUID primary key
+location_name TEXT
+latitude DOUBLE PRECISION
+longitude DOUBLE PRECISION
+traffic_risk INTEGER
+flood_risk INTEGER
+infrastructure_risk INTEGER
+pollution_risk INTEGER
+verified_report_risk INTEGER
+overall_risk INTEGER
+risk_level TEXT
+calculated_at TIMESTAMPTZ
+
+TABLE: predictions
+
+id UUID primary key
+location_name TEXT
+prediction_type TEXT
+probability DOUBLE PRECISION
+expected_start TIMESTAMPTZ
+expected_end TIMESTAMPTZ
+contributing_factors JSONB
+recommendation TEXT
+created_at TIMESTAMPTZ
+
+TABLE: admin_actions
+
+id UUID primary key
+admin_id UUID references profiles(id)
+report_id UUID references reports(id)
+action TEXT
+notes TEXT
+created_at TIMESTAMPTZ
+
+TABLE: alerts
+
+id UUID primary key
+title TEXT
+message TEXT
+severity TEXT
+location_name TEXT
+related_report_id UUID
+read BOOLEAN DEFAULT false
+created_at TIMESTAMPTZ
+
+Create useful indexes for:
+- reports.status
+- reports.category
+- reports.created_at
+- reports.user_id
+- reports.latitude
+- reports.longitude
+- risk_scores.risk_level
+- risk_scores.location_name
+
+==================================================
+8. ROW LEVEL SECURITY
+==================================================
+
+Enable RLS on all user-facing tables.
+
+Citizen:
+
+Can:
+- view own profile
+- update own profile
+- create reports
+- view own reports
+
+Admin:
+
+Can:
+- view all reports
+- update reports
+- view all risk scores
+- manage risk scores
+- view predictions
+- manage predictions
+- create admin actions
+- view analytics data
+- manage alerts
+
+Do not expose unrestricted database access.
+
+Never rely only on frontend role checks.
+
+Use database/server-side authorization as well.
+
+==================================================
+9. STORAGE
+==================================================
+
+Create Supabase Storage bucket:
+
+report-images
+
+Store images using:
+
+report-images/{user_id}/{report_id}/image
+
+Implement:
+- image upload
+- file validation
+- reasonable size limit
+- image preview
+- upload progress if practical
+- error handling
+
+Store the resulting path/URL in reports.image_url.
+
+Do not expose private service-role credentials.
+
+==================================================
+10. GLOBAL DESIGN
+==================================================
+
+Make CityPulse look like a premium futuristic urban intelligence platform.
+
+NOT a generic student dashboard.
+
+Design style:
+
+- dark futuristic interface
+- glassmorphism
+- subtle gradients
+- red/cyan accent lighting
+- glowing data points
+- clean typography
+- rounded panels
+- subtle borders
+- smooth transitions
+- professional spacing
+- responsive design
+- modern dashboard cards
+- cinematic visual hierarchy
+
+Use animations carefully.
+
+Do not over-animate.
+
+Performance matters.
+
+Use a consistent design system.
+
+==================================================
+11. LANDING PAGE
+==================================================
+
+Create an impressive homepage.
+
+Hero:
+
+CITYPULSE
+
+"See the city before the problem."
+
+Supporting text:
+
+"AI-powered urban intelligence that transforms citizen reports into actionable city insights."
+
+Primary button:
+
+ENTER CITYPULSE
+
+Secondary button:
+
+REPORT A PROBLEM
+
+Hero visual:
+
+A futuristic smart city.
+
+Prefer React Three Fiber / Three.js.
+
+Show:
+- buildings
+- roads
+- simple vehicles
+- glowing risk zones
+- data markers
+
+Risk colors:
+
+LOW = green
+MEDIUM = yellow
+HIGH = red
+
+Use subtle camera movement.
+
+Add:
+
+LIVE CITY INTELLIGENCE
+
+Example demonstration metrics:
+
+142 Reports
+87 High Risk
+24 Pending Verification
+64 Resolved
+
+Clearly identify these as demo/simulation values if they are not live database values.
+
+Then:
+
+HOW CITYPULSE WORKS
+
+Citizen Report
+↓
+AI Analysis
+↓
+Verification
+↓
+Risk Intelligence
+↓
+Action
+
+Then:
+
+WHY CITYPULSE
+
+PREDICT
+VERIFY
+PRIORITIZE
+RESOLVE
+
+==================================================
+12. CITIZEN DASHBOARD
+==================================================
+
+Create /dashboard.
+
+Show:
+
+Total Reports
+Pending
+Verified
+Resolved
+
+Recent reports.
+
+Risk overview.
+
+Quick actions:
+
+REPORT A PROBLEM
+VIEW MY REPORTS
+VIEW CITY MAP
+
+Make it visually polished.
+
+==================================================
+13. REPORT PROBLEM
+==================================================
+
+Create /report.
+
+Form:
+
+Category
+Title
+Description
+Severity
+Image
+Location
+
+Categories:
+
+Traffic
+Flooding
+Road Damage
+Garbage
+Streetlight
+Pollution
+Infrastructure
+
+Severity:
+
+LOW
+MEDIUM
+HIGH
+
+Location should support:
+- manual location selection
+- latitude/longitude
+- location name
+
+If browser geolocation permission is available, allow user to use current location.
+
+Do not require geolocation permission for the form to work.
+
+Validation:
+
+- title required
+- description required
+- category required
+- reasonable description length
+- image type validation
+- image size validation
+
+On submit:
+
+1. validate
+2. create report ID
+3. upload image
+4. save report
+5. status = PENDING_VERIFICATION
+6. perform AI analysis
+7. store AI analysis
+8. show success
+9. redirect to report detail
+
+If AI is unavailable, use a deterministic fallback.
+
+The user must never see a broken experience just because Gemini is unavailable.
+
+==================================================
+14. REPORT DETAIL
+==================================================
+
+Create:
+
+/my-reports/[id]
+
+Show:
+
+Title
+Category
+Description
+Image
+Location
+Created time
+Severity
+AI confidence
+AI summary
+Current status
+
+Timeline:
+
+SUBMITTED
+↓
+AI ANALYSIS
+↓
+VERIFICATION
+↓
+ASSIGNED
+↓
+IN PROGRESS
+↓
+RESOLVED
+
+Show only relevant stages based on current status.
+
+==================================================
+15. MY REPORTS
+==================================================
+
+Create /my-reports.
+
+Show cards/table.
+
+Filters:
+
+All
+Pending
+Verified
+Rejected
+In Progress
+Resolved
+
+Search.
+
+Sort by newest.
+
+Click report to open details.
+
+==================================================
+16. AI VERIFICATION
+==================================================
+
+Create a server-side API route:
+
+/api/ai/analyze-report
+
+Use Gemini.
+
+Never expose GEMINI_API_KEY to the client.
+
+Analyze:
+
+- category
+- severity
+- confidence
+- summary
+- suspicious
+- possible duplicate
+- verification priority
+
+Return structured JSON:
+
+{
+  "category": "Road Damage",
+  "severity": "HIGH",
+  "confidence": 0.94,
+  "summary": "Reported road damage may affect traffic flow.",
+  "suspicious": false,
+  "possible_duplicate": false,
+  "verification_priority": "HIGH"
+}
+
+Use strict JSON parsing.
+
+Validate AI output.
+
+If AI response is invalid:
+use fallback logic.
+
+IMPORTANT:
+
+AI DOES NOT VERIFY THE REPORT.
+
+AI only assists verification.
+
+The status remains:
+
+PENDING_VERIFICATION
+
+until an ADMIN verifies it.
+
+==================================================
+17. FALSE REPORT PROTECTION
+==================================================
+
+Implement:
+
+AI suspicious flag.
+
+Duplicate detection.
+
+Potential duplicate matching should consider:
+
+- category
+- nearby coordinates
+- similar title/description
+- recent time window
+
+If likely duplicate:
+link duplicate_of to the original report.
+
+Increase evidence_count.
+
+Do not automatically punish users.
+
+Do not automatically ban accounts.
+
+Admin decides.
+
+Display:
+
+"Verification Required"
+
+when appropriate.
+
+==================================================
+18. ADMIN CONTROL ROOM
+==================================================
+
+Create /control-room.
+
+This is the main hackathon WOW screen.
+
+Header:
+
+CITYPULSE
+URBAN INTELLIGENCE CONTROL ROOM
+
+Top cards:
+
+Total Reports
+Pending Verification
+Verified
+Resolved
+High Risk Areas
+
+Main panel:
+
+3D CITY CONTROL CENTER
+
+Create a stylized 3D city using React Three Fiber.
+
+Scene:
+
+- buildings
+- roads
+- simple vehicles
+- trees/parks
+- glowing markers
+
+Risk markers:
+
+GREEN = LOW
+YELLOW = MEDIUM
+RED = HIGH
+
+Markers should pulse subtly.
+
+Click marker:
+
+Open detail panel.
+
+Detail:
+
+Location
+Overall Risk
+Traffic Risk
+Flood Risk
+Infrastructure Risk
+Pollution Risk
+Verified Report Risk
+Risk Level
+
+Recent verified reports.
+
+AI prediction.
+
+Recommended action.
+
+If full 3D causes stability/performance problems:
+fallback to a polished 2.5D/isometric city visualization.
+
+Do NOT allow the 3D visualization to break the rest of the application.
+
+==================================================
+19. RISK ENGINE
+==================================================
+
+Create a reusable risk engine.
+
+Formula:
+
+overallRisk =
+trafficRisk * 0.30 +
+floodRisk * 0.25 +
+infrastructureRisk * 0.20 +
+pollutionRisk * 0.15 +
+verifiedReportRisk * 0.10
+
+Clamp:
+0-100
+
+Levels:
+
+0-39 LOW
+40-69 MEDIUM
+70-100 HIGH
+
+Only VERIFIED reports contribute to verifiedReportRisk.
+
+When admin verifies a report:
+recalculate relevant location.
+
+When report is rejected:
+do not include it.
+
+When report is resolved:
+do not treat it as an active new incident unless appropriate.
+
+Clearly label:
+
+"Prototype Risk Model"
+
+Do not claim this is scientifically validated city forecasting.
+
+==================================================
+20. ADMIN REPORT MANAGEMENT
+==================================================
+
+Create /reports.
+
+Tabs:
+
+ALL
+PENDING
+VERIFIED
+REJECTED
+ASSIGNED
+IN PROGRESS
+RESOLVED
+
+Each report displays:
+
+Category
+Title
+Location
+Severity
+AI Confidence
+AI Summary
+Status
+Date
+
+For pending:
+
+VERIFY
+REJECT
+MARK DUPLICATE
+
+For verified:
+
+ASSIGN
+IN PROGRESS
+RESOLVE
+
+Every admin action must:
+
+1. update report
+2. insert admin_actions row
+3. update UI
+4. recalculate risk when necessary
+
+Use confirmation dialogs for destructive actions.
+
+==================================================
+21. PREDICTION ENGINE
+==================================================
+
+Create prototype AI-assisted prediction.
+
+Predictions should use:
+- verified reports
+- recent report frequency
+- risk score
+- category concentration
+- location concentration
+
+Example:
+
+Central Junction
+
+Traffic congestion
+
+Probability:
+82%
+
+Contributing factors:
+- increasing verified traffic reports
+- high traffic risk
+- nearby infrastructure issue
+
+Recommendation:
+"Inspect traffic flow and road condition."
+
+Clearly label predictions:
+
+AI-ASSISTED PROTOTYPE FORECAST
+
+Do not pretend this is a scientifically validated forecasting model.
+
+==================================================
+22. CITY MAP
+==================================================
+
+Create /map.
+
+Show urban locations.
+
+Use a map-like visual if practical.
+
+Otherwise create a polished schematic/isometric map.
+
+Markers:
+
+Green
+Yellow
+Red
+
+Filters:
+
+All
+Traffic
+Flooding
+Road Damage
+Garbage
+Pollution
+Infrastructure
+
+Click location:
+
+Show risk panel.
+
+==================================================
+23. ANALYTICS
+==================================================
+
+Create /analytics.
+
+Cards:
+
+Total Reports
+Verification Rate
+Resolution Rate
+High Risk Areas
+Average Resolution Time
+
+Charts:
+
+Reports over time
+Reports by category
+Reports by status
+Risk distribution
+Resolved vs unresolved
+
+Time filters:
+
+7D
+30D
+90D
+
+Use Recharts.
+
+Use real Supabase data.
+
+If there is not enough data:
+use clearly labelled demonstration data.
+
+==================================================
+24. ADMIN AI ASSISTANT
+==================================================
+
+Create /ai-assistant.
+
+UI:
+
+CITYPULSE AI
+
+"Ask about the city..."
+
+Suggested questions:
+
+Which area should we prioritize?
+
+What are today's biggest problems?
+
+How many reports are pending verification?
+
+Which category has the most reports?
+
+Why is Central Junction high risk?
+
+What should we prioritize first?
+
+Create server-side AI route.
+
+The assistant must receive current database statistics.
+
+It must not invent numbers.
+
+Structure responses:
+
+VERIFIED DATA
+
+AI ANALYSIS
+
+PREDICTION
+
+RECOMMENDATION
+
+Example:
+
+VERIFIED DATA:
+14 verified traffic reports.
+
+AI ANALYSIS:
+Traffic is currently the dominant risk factor.
+
+PREDICTION:
+The area may experience increased congestion.
+
+RECOMMENDATION:
+Inspect traffic flow and road condition.
+
+==================================================
+25. ALERTS
+==================================================
+
+Create alerts.
+
+Examples:
+
+HIGH RISK AREA DETECTED
+Central Junction risk score reached 87.
+
+NEW REPORT REQUIRES VERIFICATION
+Road damage report received.
+
+PREDICTION ALERT
+Traffic congestion probability increased.
+
+Allow admin to mark alerts as read.
+
+==================================================
+26. DEMO DATA
+==================================================
+
+Seed realistic demonstration data.
+
+Locations:
+
+Central Junction
+Metro Road
+Lake View
+Market Street
+Tech Park
+University Road
+
+Categories:
+
+Traffic
+Flooding
+Road Damage
+Garbage
+Streetlight
+Pollution
+Infrastructure
+
+Create enough reports to make the dashboard and charts look meaningful.
+
+IMPORTANT:
+
+Clearly treat seeded values as:
+
+DEMO / SIMULATION DATA
+
+Do not claim they are real city/government data.
+
+==================================================
+27. ADMIN ACCOUNT
+==================================================
+
+Create documentation for making one existing Supabase account an ADMIN.
+
+Do NOT expose an admin password in source code.
+
+Do NOT create a public admin signup.
+
+If practical, create a development-only helper command/script that can assign ADMIN to a specified existing account, but ensure it cannot be triggered from the public UI.
+
+==================================================
+28. ERROR HANDLING
+==================================================
+
+Implement:
+
+loading states
+empty states
+error states
+toast notifications
+form validation
+API error handling
+Supabase error handling
+AI failure fallback
+image upload failure handling
+
+Never show raw technical errors to normal users.
+
+==================================================
+29. RESPONSIVE DESIGN
+==================================================
+
+Must work on:
+
+desktop
+tablet
+mobile
+
+Admin control room can be desktop optimized but should remain usable on smaller screens.
+
+==================================================
+30. PERFORMANCE
+==================================================
+
+Do not unnecessarily load huge 3D assets.
+
+Use lightweight procedural 3D geometry.
+
+Lazy load expensive components.
+
+Avoid unnecessary dependencies.
+
+Avoid excessive animations.
+
+==================================================
+31. SECURITY
+==================================================
+
+IMPORTANT:
+
+Never put secrets in client components.
+
+Never expose:
+
+SUPABASE_SERVICE_ROLE_KEY
+GEMINI_API_KEY
+
+Use server-side routes for privileged operations.
+
+Use Supabase RLS.
+
+Validate all inputs.
+
+Do not trust role information sent by the client.
+
+Verify admin role server-side.
+
+==================================================
+32. CODE QUALITY
+==================================================
+
+Use:
+
+TypeScript.
+
+Reusable components.
+
+Reusable utilities.
+
+Clear folder structure.
+
+No unnecessary duplicate code.
+
+No placeholder TODO features.
+
+No fake buttons.
+
+No broken navigation.
+
+Use meaningful names.
+
+==================================================
+33. FOLDER STRUCTURE
+==================================================
+
+Organize approximately like:
+
+app/
+  page.tsx
+  login/
+  signup/
+  dashboard/
+  report/
+  my-reports/
+  control-room/
+  reports/
+  analytics/
+  ai-assistant/
+  map/
+  api/
+    ai/
+      analyze-report/
+      assistant/
+
+components/
+  ui/
+  dashboard/
+  reports/
+  city/
+  charts/
+  ai/
+
+lib/
+  supabase/
+  ai/
+  risk/
+  auth/
+  utils/
+
+types/
+
+==================================================
+34. FINAL DEMO EXPERIENCE
+==================================================
+
+The complete demo should support:
+
+STEP 1
+
+Citizen logs in.
+
+STEP 2
+
+Citizen submits:
+
+"Large pothole near Central Junction causing traffic."
+
+STEP 3
+
+AI analyzes:
+
+Road Damage
+HIGH
+94% confidence
+
+STEP 4
+
+Report enters:
+
+PENDING_VERIFICATION
+
+STEP 5
+
+Admin opens Control Room.
+
+STEP 6
+
+Admin sees pending report.
+
+STEP 7
+
+Admin verifies report.
+
+STEP 8
+
+Risk engine updates Central Junction.
+
+Example:
+
+Traffic: 92
+Infrastructure: 84
+Flood: 71
+Pollution: 63
+
+Overall:
+87 HIGH
+
+STEP 9
+
+3D city shows:
+
+Central Junction 🔴
+
+STEP 10
+
+AI prediction:
+
+"Potential traffic congestion"
+
+Probability:
+82%
+
+STEP 11
+
+Admin marks:
+
+IN PROGRESS
+
+STEP 12
+
+Admin marks:
+
+RESOLVED
+
+STEP 13
+
+Analytics update.
+
+This entire flow must work.
+
+==================================================
+35. IMPORTANT HACKATHON PRIORITY
+==================================================
+
+If time becomes limited, prioritize in this exact order:
+
+1. Supabase connection
+2. Authentication
+3. Citizen reporting
+4. Admin dashboard
+5. Report verification
+6. Risk calculation
+7. 3D/schematic city visualization
+8. AI analysis
+9. Analytics
+10. AI assistant
+11. Extra animations
+
+Do not spend excessive time perfecting 3D before the core workflow works.
+
+==================================================
+36. FINAL QUALITY CHECK
+==================================================
+
+After implementing everything:
+
+Run the application.
+
+Test:
+
+Homepage
+Signup
+Login
+Citizen dashboard
+Report submission
+Image upload
+My Reports
+Report details
+Admin login
+Admin control room
+Report verification
+Reject
+Duplicate
+Assign
+In progress
+Resolve
+Risk calculation
+Prediction
+Analytics
+AI assistant
+City map
+Logout
+
+Check:
+
+TypeScript errors
+Build errors
+Runtime errors
+Console errors
+Broken routes
+Broken buttons
+Authentication issues
+Supabase errors
+Missing environment variables
+Responsive layout
+
+Fix all critical issues.
+
+Do not add unnecessary features at this stage.
+
+==================================================
+37. FINAL HACKATHON UI
+==================================================
+
+Make the final application feel like a real startup product.
+
+Brand:
+
+CITYPULSE
+
+Tagline:
+
+"See the city before the problem."
+
+Tone:
+
+professional
+intelligent
+futuristic
+trustworthy
+
+Avoid:
+- childish UI
+- excessive gradients
+- random neon colors
+- generic Bootstrap look
+- unfinished placeholder sections
+
+==================================================
+FINAL INSTRUCTION
+==================================================
+
+BUILD THE APPLICATION NOW.
+
+First inspect the existing Replit project.
+
+If it is empty, initialize the project.
+
+Create the database schema and application architecture.
+
+Implement the core workflow first.
+
+Then implement the advanced features.
+
+Do not stop at planning.
+
+Actually create the files and code.
+
+Run the application.
+
+Fix errors.
+
+Continue until the application is a complete demo-ready CityPulse full-stack application.
